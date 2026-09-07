@@ -36,7 +36,7 @@ public class NameSupport extends LayoutSupport<NameTemplate> implements GlobalPr
 	private volatile boolean initialized = false;
 
 	// Memoized layout format to avoid repeated DB calls
-	private String layoutFormat;
+	private volatile String layoutFormat;
 
 	public NameSupport() {
 		if (singleton == null) {
@@ -58,13 +58,19 @@ public class NameSupport extends LayoutSupport<NameTemplate> implements GlobalPr
 	 */
 	private void init() {
 
-		// now the listener is secure and guards the expensive database reads.
 		if (initialized) {
 			return;
 		}
 
 		Context.getAdministrationService().addGlobalPropertyListener(singleton);
-		// Get configured name template to override the existing one if any
+
+		// Get the configured name format so the cache starts out matching the database
+		String formatGp = Context.getAdministrationService()
+		        .getGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_LAYOUT_NAME_FORMAT);
+		if (StringUtils.isNotBlank(formatGp)) {
+			this.layoutFormat = formatGp;
+		}
+
 		String layoutTemplateXml = Context.getAdministrationService()
 		        .getGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_LAYOUT_NAME_TEMPLATE);
 		NameTemplate nameTemplate = deserializeXmlTemplate(layoutTemplateXml);
